@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="WebApp_ID" version="2.4"
+	xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd" >
+	
+	<display-name>OIOSAML-J</display-name>
+	
+	<!-- 该WEB环境变量为配置文件所在的目录 -->
+	<!-- 当该目录不存在或为空时，用户可以访问 /oiosaml/saml/configure 执行生成配置文件的操作 -->
+	<env-entry>
+        <env-entry-name>oiosaml-j.home</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <!-- For Linux
+        <env-entry-value>/home/tianlong/saml/oiosaml-config</env-entry-value>
+         -->
+        <env-entry-value>c:\oiosaml-config</env-entry-value>
+    </env-entry>
+
+	<listener>
+		<listener-class>dk.itst.oiosaml.sp.service.session.SessionDestroyListener</listener-class>
+	</listener>
+
+	<servlet>
+		<servlet-name>SAMLDispatcherServlet</servlet-name>
+		<servlet-class>
+			dk.itst.oiosaml.sp.service.DispatcherServlet
+		</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>SAMLDispatcherServlet</servlet-name>
+		<url-pattern>/saml/*</url-pattern>
+	</servlet-mapping>
+	
+	<!-- 需要配置该filter才能正常读取IdpMetadata，即使filter不拦截??? -->
+    <filter>
+        <filter-name>LoginFilter</filter-name>
+        <filter-class>dk.itst.oiosaml.sp.service.SPFilter</filter-class>
+    </filter>
+    
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
