@@ -24,13 +24,12 @@
 package dk.itst.oiosaml.sp.service;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
 import org.opensaml.saml2.core.Assertion;
 
 import dk.itst.oiosaml.common.MD5FileUtil;
@@ -41,7 +40,6 @@ import dk.itst.oiosaml.sp.AuthenticationHandler;
 import dk.itst.oiosaml.sp.PassiveUserAssertion;
 import dk.itst.oiosaml.sp.UserAssertion;
 import dk.itst.oiosaml.sp.UserAssertionImpl;
-import dk.itst.oiosaml.sp.UserAttribute;
 import dk.itst.oiosaml.sp.metadata.IdpMetadata.Metadata;
 import dk.itst.oiosaml.sp.model.OIOAssertion;
 import dk.itst.oiosaml.sp.model.OIOResponse;
@@ -49,7 +47,6 @@ import dk.itst.oiosaml.sp.model.RelayState;
 import dk.itst.oiosaml.sp.model.validation.AssertionValidator;
 import dk.itst.oiosaml.sp.service.util.ArtifactExtractor;
 import dk.itst.oiosaml.sp.service.util.Constants;
-import dk.itst.oiosaml.sp.service.util.HTTPUtils;
 import dk.itst.oiosaml.sp.service.util.HttpSOAPClient;
 import dk.itst.oiosaml.sp.service.util.PostResponseExtractor;
 import dk.itst.oiosaml.sp.service.util.SOAPClient;
@@ -172,6 +169,7 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
 			
 			// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
+//			String group = userAssertion.getAttribute("group").getValue(); // 获取group
 //			String name = URLEncoder.encode(userAssertion.getAttribute("sn").getValue(), "UTF-8"); // 姓名
 			String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
 			Configuration conf = ctx.getConfiguration();
