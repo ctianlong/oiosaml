@@ -80,7 +80,8 @@ public class LogoutHandler implements SAMLHandler{
 
 		if (log.isDebugEnabled()) log.debug("Redirect to..:" + redirectURL);
 		Audit.log(Operation.LOGOUT, assertion.getSubjectNameIDValue());
-
+		// 测试登出时，我们额外传过去的参数服务端是否会原样返回，经验证RelayState会返回
+//		redirectURL +="&RelayState=value1&key=value";
 		context.getResponse().sendRedirect(redirectURL);
 	}
 
