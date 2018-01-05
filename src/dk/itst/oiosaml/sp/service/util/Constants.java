@@ -41,6 +41,7 @@ public interface Constants {
 	static final String PROP_LOGIN_TOKEN_KEY = "oiosaml-sp.login.token.key";
 	static final String PROP_LOGIN_TOKEN_VAILDTIME = "oiosaml-sp.login.token.vaildtime";
 	static final String PROP_LOGOUT_NOTICE = "oiosaml-sp.uri.logout.notice";
+	static final String PROP_LOGOUT_NOTICE_ENABLE = "oiosaml-sp.logout.notice.enable";
 	
 	/**
 	 * Session attribute for holding the user's current assertion. The value of the

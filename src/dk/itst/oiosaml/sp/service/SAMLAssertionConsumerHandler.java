@@ -24,6 +24,7 @@
 package dk.itst.oiosaml.sp.service;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
@@ -169,8 +170,7 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
 			
 			// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
-//			String group = userAssertion.getAttribute("group").getValue(); // 获取group
-//			String name = URLEncoder.encode(userAssertion.getAttribute("sn").getValue(), "UTF-8"); // 姓名
+			String name = URLEncoder.encode(userAssertion.getAttribute("sn").getValue(), "UTF-8"); // 姓名
 			String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
 			Configuration conf = ctx.getConfiguration();
 			String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
@@ -178,7 +178,7 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
 			String token = MD5FileUtil.getMD5String(uid + key + time);
 			String loginRespUri = conf.getString(Constants.PROP_LOGIN_RESPONSE);
-			String url = loginRespUri + "?token=" + token + "&uid=" + uid;
+			String url = loginRespUri + "?token=" + token + "&uid=" + uid + "&name=" + name;
 			ctx.getResponse().sendRedirect(url);
 		}
 		

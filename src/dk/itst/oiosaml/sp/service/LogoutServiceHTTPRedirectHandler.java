@@ -126,14 +126,16 @@ public class LogoutServiceHTTPRedirectHandler implements SAMLHandler {
 			if (log.isDebugEnabled())
 				log.debug("sendRedirect to..:" + url);
 			
-			// 原始跳转url为 ...slo_return... 形式
-			// 让oiosaml先去通知业务系统登出, 再让业务系统重定向到原始跳转url v1.0
-			String logoutNoticeUri = ctx.getConfiguration().getString(Constants.PROP_LOGOUT_NOTICE);
-			ctx.getResponse().sendRedirect(logoutNoticeUri + "?redirectUrl=" + URLEncoder.encode(url, "UTF-8"));
-			
-			
-			// 取消原来的跳转逻辑
-//			ctx.getResponse().sendRedirect(url);
+			// 是否接收其它业务系统登出的通知
+			boolean logoutNoticeEnable = ctx.getConfiguration().getBoolean(Constants.PROP_LOGOUT_NOTICE_ENABLE, true);
+			if (logoutNoticeEnable) {
+				// 原始跳转url为 ...slo_return... 形式
+				// 让oiosaml先去通知业务系统登出, 再让业务系统重定向到原始跳转url v1.0
+				String logoutNoticeUri = ctx.getConfiguration().getString(Constants.PROP_LOGOUT_NOTICE);
+				ctx.getResponse().sendRedirect(logoutNoticeUri + "?redirectUrl=" + URLEncoder.encode(url, "UTF-8"));
+			} else {
+				ctx.getResponse().sendRedirect(url);
+			}
 		}
 	}
 	
@@ -208,14 +210,16 @@ public class LogoutServiceHTTPRedirectHandler implements SAMLHandler {
 			if (log.isDebugEnabled())
 				log.debug("sendRedirect to..:" + url);
 			
-			// 原始跳转url为 ...slo_return... 形式
-			// 让oiosaml先去通知业务系统登出, 再让业务系统重定向到原始跳转url v1.0
-			String logoutNoticeUri = ctx.getConfiguration().getString(Constants.PROP_LOGOUT_NOTICE);
-			ctx.getResponse().sendRedirect(logoutNoticeUri + "?redirectUrl=" + URLEncoder.encode(url, "UTF-8"));
-			
-			
-			// 取消原来的跳转逻辑
-//			ctx.getResponse().sendRedirect(url);
+			// 是否接收其它业务系统登出的通知
+			boolean logoutNoticeEnable = ctx.getConfiguration().getBoolean(Constants.PROP_LOGOUT_NOTICE_ENABLE, true);
+			if (logoutNoticeEnable) {
+				// 原始跳转url为 ...slo_return... 形式
+				// 让oiosaml先去通知业务系统登出, 再让业务系统重定向到原始跳转url v1.0
+				String logoutNoticeUri = ctx.getConfiguration().getString(Constants.PROP_LOGOUT_NOTICE);
+				ctx.getResponse().sendRedirect(logoutNoticeUri + "?redirectUrl=" + URLEncoder.encode(url, "UTF-8"));
+			} else {
+				ctx.getResponse().sendRedirect(url);
+			}
         }
 	}
 	
