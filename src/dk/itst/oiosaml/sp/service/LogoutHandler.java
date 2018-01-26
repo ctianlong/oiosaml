@@ -54,7 +54,7 @@ public class LogoutHandler implements SAMLHandler{
 		HttpSession session = context.getSession();
 		
 		// 打印登出时浏览器传过来的sessionId
-		System.out.println("Logout: check sessionId " + session.getId() + " is loggedIn");
+//		System.out.println("Logout: check sessionId " + session.getId() + " is loggedIn");
 
 		// Check that user is logged in...
 		if (!context.getSessionHandler().isLoggedIn(session.getId())) {

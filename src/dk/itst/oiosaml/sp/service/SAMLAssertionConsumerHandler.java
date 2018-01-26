@@ -25,6 +25,7 @@ package dk.itst.oiosaml.sp.service;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.Collection;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
@@ -41,6 +42,7 @@ import dk.itst.oiosaml.sp.AuthenticationHandler;
 import dk.itst.oiosaml.sp.PassiveUserAssertion;
 import dk.itst.oiosaml.sp.UserAssertion;
 import dk.itst.oiosaml.sp.UserAssertionImpl;
+import dk.itst.oiosaml.sp.UserAttribute;
 import dk.itst.oiosaml.sp.metadata.IdpMetadata.Metadata;
 import dk.itst.oiosaml.sp.model.OIOAssertion;
 import dk.itst.oiosaml.sp.model.OIOResponse;
@@ -140,6 +142,8 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			session.setAttribute(Constants.SESSION_USER_ASSERTION, passiveUserAssertion);
 			
 			Audit.log(Operation.LOGIN, passiveUserAssertion.getSubject());
+			// 标记，以备出错排查
+			System.out.println("--- is passive ---");
 		} else {
 			OIOAssertion assertion = response.getAssertion();
 	
@@ -167,21 +171,25 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			session.setAttribute(Constants.SESSION_USER_ASSERTION, userAssertion);
 			
 			// 打印登录时放入oiosaml的sessionId
-			System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
-			
+			//System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
 			// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
-			String name = URLEncoder.encode(userAssertion.getAttribute("sn").getValue(), "UTF-8"); // 姓名
 			String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
 			Configuration conf = ctx.getConfiguration();
 			String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
 			long vaildtime = conf.getLong(Constants.PROP_LOGIN_TOKEN_VAILDTIME, 60000); // 获取token最长有效时间
+			//System.out.println(System.currentTimeMillis());
 			long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
 			String token = MD5FileUtil.getMD5String(uid + key + time);
 			String loginRespUri = conf.getString(Constants.PROP_LOGIN_RESPONSE);
-			String url = loginRespUri + "?token=" + token + "&uid=" + uid + "&name=" + name;
+			String url = loginRespUri + "?token=" + token + "&uid=" + URLEncoder.encode(uid, "UTF-8");
+			Collection<UserAttribute> attributes = userAssertion.getAllAttributes();
+			for (UserAttribute a : attributes) {
+				String name = a.getName();
+				if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
+				url += "&" + URLEncoder.encode(name, "UTF-8") + "=" + URLEncoder.encode(a.getValue(), "UTF-8");
+			}
 			ctx.getResponse().sendRedirect(url);
 		}
-		
 		// 取消原来的跳转逻辑
 //		if (relayState.getRelayState() != null) {
 //			HTTPUtils.sendResponse(ctx.getSessionHandler().getRequest(relayState.getRelayState()), ctx);
