@@ -24,7 +24,12 @@
 package dk.itst.oiosaml.sp.service;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 
 import javax.servlet.ServletException;
@@ -34,6 +39,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.opensaml.saml2.core.Assertion;
 
+import dk.itst.oiosaml.common.DBException;
+import dk.itst.oiosaml.common.JDBCUtils;
 import dk.itst.oiosaml.common.MD5FileUtil;
 import dk.itst.oiosaml.common.SAMLUtil;
 import dk.itst.oiosaml.logging.Audit;
@@ -170,25 +177,8 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			ctx.getSessionHandler().setAssertion(session.getId(), assertion);
 			session.setAttribute(Constants.SESSION_USER_ASSERTION, userAssertion);
 			
-			// 打印登录时放入oiosaml的sessionId
-			//System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
-			// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
-			String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
-			Configuration conf = ctx.getConfiguration();
-			String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
-			long vaildtime = conf.getLong(Constants.PROP_LOGIN_TOKEN_VAILDTIME, 60000); // 获取token最长有效时间
-			//System.out.println(System.currentTimeMillis());
-			long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
-			String token = MD5FileUtil.getMD5String(uid + key + time);
-			String loginRespUri = conf.getString(Constants.PROP_LOGIN_RESPONSE);
-			String url = loginRespUri + "?token=" + token + "&uid=" + URLEncoder.encode(uid, "UTF-8");
-			Collection<UserAttribute> attributes = userAssertion.getAllAttributes();
-			for (UserAttribute a : attributes) {
-				String name = a.getName();
-				if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
-				url += "&" + URLEncoder.encode(name, "UTF-8") + "=" + URLEncoder.encode(a.getValue(), "UTF-8");
-			}
-			ctx.getResponse().sendRedirect(url);
+			// 发送用户信息到业务系统
+			redirectToSP(userAssertion, ctx);
 		}
 		// 取消原来的跳转逻辑
 //		if (relayState.getRelayState() != null) {
@@ -210,5 +200,82 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			return true;
 		}
 	}
+    
+    private void redirectToSP(UserAssertion userAssertion, RequestContext ctx) throws IOException {
+		//System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
+		// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
+    	Configuration conf = ctx.getConfiguration();
+    	String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
+    	String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
+		long vaildtime = conf.getLong(Constants.PROP_LOGIN_TOKEN_VAILDTIME, 60000); // 获取token最长有效时间
+		long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
+		String token = MD5FileUtil.getMD5String(uid + key + time);
+		StringBuilder url = new StringBuilder(conf.getString(Constants.PROP_LOGIN_RESPONSE));
+		url.append("?token=");
+		url.append(token);
+		url.append("&uid=");
+		url.append(uid);
+		concatPidOrPhoneOnUrlByUid(url, uid, ctx);
+		Collection<UserAttribute> attributes = userAssertion.getAllAttributes();
+		for (UserAttribute a : attributes) {
+			String name = a.getName();
+			if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
+			url.append("&");
+			url.append(URLEncoder.encode(name, "UTF-8"));
+			url.append("=");
+			url.append(URLEncoder.encode(a.getValue(), "UTF-8"));
+		}
+		ctx.getResponse().sendRedirect(url.toString());
+    }
+    
+    private void concatPidOrPhoneOnUrlByUid(StringBuilder url, String uid, RequestContext ctx) throws UnsupportedEncodingException {
+    	Configuration conf = ctx.getConfiguration();
+    	boolean isNeedPid = conf.getBoolean("oiosaml-sp.login.pid.enable", false);
+    	boolean isNeedPhone = conf.getBoolean("oiosaml-sp.login.phone.enable", false);
+    	if (!isNeedPid && !isNeedPhone)
+    		return;
+    	StringBuilder sql = new StringBuilder("SELECT ");
+    	if (isNeedPid) {
+    		sql.append(conf.getString("oiosaml-sp.login.pid.column"));
+    		if (isNeedPhone) {
+    			sql.append(", ");
+    			sql.append(conf.getString("oiosaml-sp.login.phone.column"));
+    		}
+    	} else {
+    		sql.append(conf.getString("oiosaml-sp.login.phone.column"));
+    	}
+    	sql.append(" FROM ");
+    	sql.append(conf.getString("oiosaml-sp.login.info.table"));
+    	sql.append(" WHERE ");
+    	sql.append(conf.getString("oiosaml-sp.login.uid.column"));
+    	sql.append(" = ?");
+    	Connection conn = null;
+		PreparedStatement pStatement = null;
+		ResultSet resultSet = null;
+		try {
+			conn = JDBCUtils.getConnection();
+			pStatement = conn.prepareStatement(sql.toString());
+			pStatement.setObject(1, uid);
+			resultSet = pStatement.executeQuery();
+			if(resultSet.next()){
+				if (isNeedPid) {
+					url.append("&pid=");
+					url.append(URLEncoder.encode(resultSet.getString(1), "UTF-8"));
+					if (isNeedPhone) {
+						url.append("&phone=");
+						url.append(URLEncoder.encode(resultSet.getString(2), "UTF-8"));
+					}
+				} else {
+					url.append("&phone=");
+					url.append(URLEncoder.encode(resultSet.getString(1), "UTF-8"));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new DBException("获取数据库用户信息失败");
+		} finally {
+			JDBCUtils.release(null, pStatement, resultSet);
+		}
+    }
 
 }
