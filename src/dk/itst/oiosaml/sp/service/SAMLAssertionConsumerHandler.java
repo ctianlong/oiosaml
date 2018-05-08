@@ -274,7 +274,7 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			e.printStackTrace();
 			throw new DBException("获取数据库用户信息失败");
 		} finally {
-			JDBCUtils.release(null, pStatement, resultSet);
+			JDBCUtils.release(conn, pStatement, resultSet);
 		}
     }
 
