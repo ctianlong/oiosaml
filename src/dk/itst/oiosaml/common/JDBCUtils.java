@@ -10,16 +10,55 @@ import javax.sql.DataSource;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 public class JDBCUtils {
-
-	private static DataSource dataSource = null;
 	
-	static{
-		dataSource = new ComboPooledDataSource("txy");
+	private JDBCUtils() {};
+
+	private static volatile DataSource dataSourceFirst = null;
+	private static volatile DataSource dataSourceSecond = null;
+	private static volatile DataSource dataSourceAll = null;
+	
+	public static Connection getConnectionFirst(){
+		try {
+			if (null == dataSourceFirst) {
+				synchronized (JDBCUtils.class) {
+					if (null == dataSourceFirst) {
+						dataSourceFirst = new ComboPooledDataSource("first");
+					}
+				}
+			}
+			return dataSourceFirst.getConnection();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new DBException("数据库连接错误");
+		}
 	}
 	
-	public static Connection getConnection(){  
+	public static Connection getConnectionSecond(){
 		try {
-			return dataSource.getConnection();
+			if (null == dataSourceSecond) {
+				synchronized (JDBCUtils.class) {
+					if (null == dataSourceSecond) {
+						dataSourceSecond = new ComboPooledDataSource("second");
+					}
+				}
+			}
+			return dataSourceSecond.getConnection();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new DBException("数据库连接错误");
+		}
+	}
+	
+	public static Connection getConnectionAll(){
+		try {
+			if (null == dataSourceAll) {
+				synchronized (JDBCUtils.class) {
+					if (null == dataSourceAll) {
+						dataSourceAll = new ComboPooledDataSource("all");
+					}
+				}
+			}
+			return dataSourceAll.getConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new DBException("数据库连接错误");

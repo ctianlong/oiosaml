@@ -2,7 +2,8 @@
 
 <c3p0-config>
 
-  <named-config name="txy">
+  <!-- 如果使用两个数据库来完成pid和phone的查询，请配置first和second数据源，first中根据uid查询pid，second中根据pid查询phone -->
+  <named-config name="first">
   	<!-- Mysql配置 -->
   	<property name="user">root</property>
     <property name="password">root</property>
@@ -13,9 +14,39 @@
     <property name="initialPoolSize">5</property>
     <property name="minPoolSize">5</property>
     <property name="maxPoolSize">50</property>
-
     <property name="maxStatements">20</property> 
     <property name="maxStatementsPerConnection">5</property>
-
   </named-config>
+  
+  <named-config name="second">
+  	<!-- Mysql配置 -->
+  	<property name="user">root</property>
+    <property name="password">root</property>
+    <property name="jdbcUrl">jdbc:mysql://localhost:3306/test</property>
+    <property name="driverClass">com.mysql.jdbc.Driver</property>
+  
+    <property name="acquireIncrement">2</property>
+    <property name="initialPoolSize">5</property>
+    <property name="minPoolSize">5</property>
+    <property name="maxPoolSize">50</property>
+    <property name="maxStatements">20</property> 
+    <property name="maxStatementsPerConnection">5</property>
+  </named-config>
+  
+  <!-- 如果使用一个数据库来完成pid和phone的查询，请配置all数据源，all数据源中包含uid、pid、phone -->
+  <named-config name="all">
+  	<!-- Mysql配置 -->
+  	<property name="user">root</property>
+    <property name="password">root</property>
+    <property name="jdbcUrl">jdbc:mysql://localhost:3306/test</property>
+    <property name="driverClass">com.mysql.jdbc.Driver</property>
+  
+    <property name="acquireIncrement">2</property>
+    <property name="initialPoolSize">5</property>
+    <property name="minPoolSize">5</property>
+    <property name="maxPoolSize">50</property>
+    <property name="maxStatements">20</property> 
+    <property name="maxStatementsPerConnection">5</property>
+  </named-config>
+  
 </c3p0-config>
