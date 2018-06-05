@@ -212,10 +212,15 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 		long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
 		String token = MD5FileUtil.getMD5String(uid + key + time);
 		StringBuilder url = new StringBuilder(conf.getString(Constants.PROP_LOGIN_RESPONSE));
-		url.append("?token=");
-		url.append(token);
-		url.append("&uid=");
-		url.append(uid);
+		boolean withParam = conf.getBoolean(Constants.PROP_LOGIN_RESPONSE_WITH_PARAM, false);
+		if (withParam) {
+			url.append("&token=");
+		} else {
+			url.append("?token=");
+		}
+		url.append(token)
+			.append("&uid=")
+			.append(uid);
 		int pid = conf.getInt("oiosaml-sp.login.info.table.num", 0);
 		switch (pid) {
 		case 1:
@@ -231,10 +236,10 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 		for (UserAttribute a : attributes) {
 			String name = a.getName();
 			if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
-			url.append("&");
-			url.append(URLEncoder.encode(name, "UTF-8"));
-			url.append("=");
-			url.append(URLEncoder.encode(a.getValue(), "UTF-8"));
+			url.append("&")
+				.append(URLEncoder.encode(name, "UTF-8"))
+				.append("=")
+				.append(URLEncoder.encode(a.getValue(), "UTF-8"));
 		}
 		ctx.getResponse().sendRedirect(url.toString());
     }
@@ -249,17 +254,17 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
     	if (isNeedPid) {
     		sql.append(conf.getString("oiosaml-sp.login.pid.column"));
     		if (isNeedPhone) {
-    			sql.append(", ");
-    			sql.append(conf.getString("oiosaml-sp.login.phone.column"));
+    			sql.append(", ")
+    				.append(conf.getString("oiosaml-sp.login.phone.column"));
     		}
     	} else {
     		sql.append(conf.getString("oiosaml-sp.login.phone.column"));
     	}
-    	sql.append(" FROM ");
-    	sql.append(conf.getString("oiosaml-sp.login.table.all"));
-    	sql.append(" WHERE ");
-    	sql.append(conf.getString("oiosaml-sp.login.uid.column"));
-    	sql.append(" = ?");
+    	sql.append(" FROM ")
+	    	.append(conf.getString("oiosaml-sp.login.table.all"))
+	    	.append(" WHERE ")
+	    	.append(conf.getString("oiosaml-sp.login.uid.column"))
+	    	.append(" = ?");
     	Connection conn = null;
 		PreparedStatement pStatement = null;
 		ResultSet resultSet = null;
@@ -272,19 +277,19 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 				if (isNeedPid) {
 					String pid = resultSet.getString(1);
 					if (StringUtils.isNotBlank(pid)) {
-						url.append("&pid=");
-						url.append(URLEncoder.encode(pid, "UTF-8"));
+						url.append("&pid=")
+							.append(URLEncoder.encode(pid, "UTF-8"));
 					}
 					String phone = resultSet.getString(2);
 					if (isNeedPhone && StringUtils.isNotBlank(phone)) {
-						url.append("&phone=");
-						url.append(URLEncoder.encode(phone, "UTF-8"));
+						url.append("&phone=")
+							.append(URLEncoder.encode(phone, "UTF-8"));
 					}
 				} else {
 					String phone = resultSet.getString(1);
 					if (StringUtils.isNotBlank(phone)) {
-						url.append("&phone=");
-						url.append(URLEncoder.encode(phone, "UTF-8"));
+						url.append("&phone=")
+							.append(URLEncoder.encode(phone, "UTF-8"));
 					}
 				}
 			}
@@ -307,12 +312,12 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
     	ResultSet resultSet = null;
     	if (isNeedPhone) {
     		StringBuilder sql = new StringBuilder("SELECT ");
-    		sql.append(conf.getString("oiosaml-sp.login.pid.column"));
-    		sql.append(" FROM ");
-    		sql.append(conf.getString("oiosaml-sp.login.table.first"));
-    		sql.append(" WHERE ");
-    		sql.append(conf.getString("oiosaml-sp.login.uid.column"));
-        	sql.append(" = ?");
+    		sql.append(conf.getString("oiosaml-sp.login.pid.column"))
+	    		.append(" FROM ")
+	    		.append(conf.getString("oiosaml-sp.login.table.first"))
+	    		.append(" WHERE ")
+	    		.append(conf.getString("oiosaml-sp.login.uid.column"))
+	    		.append(" = ?");
         	String pid = null;
         	try {
         		conn = JDBCUtils.getConnectionFirst();
@@ -322,8 +327,8 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 				if (resultSet.next()) {
 					pid = resultSet.getString(1);
 					if (isNeedPid && StringUtils.isNotBlank(pid)) {
-						url.append("&pid=");
-						url.append(URLEncoder.encode(pid, "UTF-8"));
+						url.append("&pid=")
+							.append(URLEncoder.encode(pid, "UTF-8"));
 					}
 				}
 			} catch (SQLException e) {
@@ -334,13 +339,13 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 	    	}
         	if (StringUtils.isNotBlank(pid)) {
         		sql.setLength(0);
-        		sql.append("SELECT ");
-        		sql.append(conf.getString("oiosaml-sp.login.phone.column"));
-        		sql.append(" FROM ");
-        		sql.append(conf.getString("oiosaml-sp.login.table.second"));
-        		sql.append(" WHERE ");
-        		sql.append(conf.getString("oiosaml-sp.login.pid.column2"));
-        		sql.append(" = ?");
+        		sql.append("SELECT ")
+        			.append(conf.getString("oiosaml-sp.login.phone.column"))
+        			.append(" FROM ")
+        			.append(conf.getString("oiosaml-sp.login.table.second"))
+        			.append(" WHERE ")
+        			.append(conf.getString("oiosaml-sp.login.pid.column2"))
+        			.append(" = ?");
         		try {
         			conn = JDBCUtils.getConnectionSecond();
         			pStatement = conn.prepareStatement(sql.toString());
@@ -349,8 +354,8 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
         			if (resultSet.next()) {
         				String phone = resultSet.getString(1);
     					if (StringUtils.isNotBlank(phone)) {
-    						url.append("&phone=");
-    						url.append(URLEncoder.encode(phone, "UTF-8"));
+    						url.append("&phone=")
+    							.append(URLEncoder.encode(phone, "UTF-8"));
     					}
         			}
         		} catch (SQLException e) {
@@ -362,12 +367,12 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
         	}
     	} else {
     		StringBuilder sql = new StringBuilder("SELECT ");
-    		sql.append(conf.getString("oiosaml-sp.login.pid.column"));
-    		sql.append(" FROM ");
-    		sql.append(conf.getString("oiosaml-sp.login.table.first"));
-    		sql.append(" WHERE ");
-    		sql.append(conf.getString("oiosaml-sp.login.uid.column"));
-        	sql.append(" = ?");
+    		sql.append(conf.getString("oiosaml-sp.login.pid.column"))
+    			.append(" FROM ")
+    			.append(conf.getString("oiosaml-sp.login.table.first"))
+    			.append(" WHERE ")
+    			.append(conf.getString("oiosaml-sp.login.uid.column"))
+    			.append(" = ?");
         	try {
         		conn = JDBCUtils.getConnectionFirst();
         		pStatement = conn.prepareStatement(sql.toString());
@@ -376,8 +381,8 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 				if (resultSet.next()) {
 					String pid = resultSet.getString(1);
 					if (isNeedPid && StringUtils.isNotBlank(pid)) {
-						url.append("&pid=");
-						url.append(URLEncoder.encode(pid, "UTF-8"));
+						url.append("&pid=")
+							.append(URLEncoder.encode(pid, "UTF-8"));
 					}
 				}
         	} catch (SQLException e) {
