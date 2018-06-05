@@ -170,25 +170,7 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			ctx.getSessionHandler().setAssertion(session.getId(), assertion);
 			session.setAttribute(Constants.SESSION_USER_ASSERTION, userAssertion);
 			
-			// 打印登录时放入oiosaml的sessionId
-			//System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
-			// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
-			String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
-			Configuration conf = ctx.getConfiguration();
-			String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
-			long vaildtime = conf.getLong(Constants.PROP_LOGIN_TOKEN_VAILDTIME, 60000); // 获取token最长有效时间
-			//System.out.println(System.currentTimeMillis());
-			long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
-			String token = MD5FileUtil.getMD5String(uid + key + time);
-			String loginRespUri = conf.getString(Constants.PROP_LOGIN_RESPONSE);
-			String url = loginRespUri + "?token=" + token + "&uid=" + URLEncoder.encode(uid, "UTF-8");
-			Collection<UserAttribute> attributes = userAssertion.getAllAttributes();
-			for (UserAttribute a : attributes) {
-				String name = a.getName();
-				if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
-				url += "&" + URLEncoder.encode(name, "UTF-8") + "=" + URLEncoder.encode(a.getValue(), "UTF-8");
-			}
-			ctx.getResponse().sendRedirect(url);
+			redirectToSP(userAssertion, ctx);
 		}
 		// 取消原来的跳转逻辑
 //		if (relayState.getRelayState() != null) {
@@ -210,5 +192,36 @@ public class SAMLAssertionConsumerHandler implements SAMLHandler {
 			return true;
 		}
 	}
+    
+    private void redirectToSP(UserAssertion userAssertion, RequestContext ctx) throws IOException {
+		//System.out.println("login: put sessionId " + session.getId() + " into sessionMap");
+		// 将从IDP接受到的登录用户信息加密传输给业务系统 v1.0
+    	Configuration conf = ctx.getConfiguration();
+    	String uid = userAssertion.getAttribute("uid").getValue(); // 获取学工号
+    	String key = conf.getString(Constants.PROP_LOGIN_TOKEN_KEY); // 获取传输加密key
+		long vaildtime = conf.getLong(Constants.PROP_LOGIN_TOKEN_VAILDTIME, 60000); // 获取token最长有效时间
+		long time = System.currentTimeMillis() / vaildtime; // 时间戳处理
+		String token = MD5FileUtil.getMD5String(uid + key + time);
+		StringBuilder url = new StringBuilder(conf.getString(Constants.PROP_LOGIN_RESPONSE));
+		boolean withParam = conf.getBoolean(Constants.PROP_LOGIN_RESPONSE_WITH_PARAM, false);
+		if (withParam) {
+			url.append("&token=");
+		} else {
+			url.append("?token=");
+		}
+		url.append(token)
+			.append("&uid=")
+			.append(uid);
+		Collection<UserAttribute> attributes = userAssertion.getAllAttributes();
+		for (UserAttribute a : attributes) {
+			String name = a.getName();
+			if("uid".equals(name) || "dk:gov:saml:attribute:SpecVer".equals(name)) continue;
+			url.append("&")
+				.append(URLEncoder.encode(name, "UTF-8"))
+				.append("=")
+				.append(URLEncoder.encode(a.getValue(), "UTF-8"));
+		}
+		ctx.getResponse().sendRedirect(url.toString());
+    }
 
 }
